@@ -1,0 +1,45 @@
+//@version=5
+strategy("Intra-Bar Percentage Trail", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Input for the trailing stop percentage
+trailPerc = input.float(2.0, title="Trailing Stop Percentage", step=0.1)
+
+// Variables to store the highest and lowest prices
+var float highestPrice = na
+var float lowestPrice = na
+
+// Calculate trailing stop prices
+var float trailStopLong = na
+var float trailStopShort = na
+
+if (strategy.position_size > 0)
+    if (na(highestPrice) or high > highestPrice)
+        highestPrice := high
+    trailStopLong := highestPrice * (1 - trailPerc / 100)
+else
+    highestPrice := na
+
+if (strategy.position_size < 0)
+    if (na(lowestPrice) or low < lowestPrice)
+        lowestPrice := low
+    trailStopShort := lowestPrice * (1 + trailPerc / 100)
+else
+    lowestPrice := na
+
+// Exit conditions
+if (strategy.position_size > 0)
+    strategy.exit("Trailing Stop Long", "Long", stop=trailStopLong)
+
+if (strategy.position_size < 0)
+    strategy.exit("Trailing Stop Short", "Short", stop=trailStopShort)
+
+// Entry conditions for demonstration purposes
+if (na(strategy.position_size) or strategy.position_size == 0)
+    if close > ta.sma(close, 20)
+        strategy.entry("Long", strategy.long)
+    else if close < ta.sma(close, 20)
+        strategy.entry("Short", strategy.short)
+
+// Plot trailing stop levels
+plot(trailStopLong, color=color.green, title="Trailing Stop Long")
+plot(trailStopShort, color=color.red, title="Trailing Stop Short")
